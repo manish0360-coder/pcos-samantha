@@ -1,27 +1,8 @@
-/**
- * ============================================================================
- * PCOS - Samantha
- * Module: Perception
- * File: app.js
- *
- * Responsibility:
- * Initializes the browser webcam and streams live video to the UI.
- *
- * This module DOES NOT:
- * - capture images
- * - communicate with the backend
- * - call AI models
- * - store data
- * - perform image processing
- *
- * Those responsibilities belong to future milestones.
- * ============================================================================
- */
-
-
 document.addEventListener("DOMContentLoaded", () => {
     const videoElement = document.getElementById("webcam");
     const statusElement = document.getElementById("status");
+    const captureBtn = document.getElementById("capture-btn");
+    const captureCanvas = document.getElementById("capture-canvas");
 
     /**
      * Initializes the webcam by requesting user permission and attaching
@@ -44,10 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
             statusElement.classList.add("success");
             
             console.log("Perception Module: Camera successfully initialized.");
-        // ============================================================================
-        // Error Handling
-        // Display a user-friendly error if camera initialization fails.
-        // ============================================================================
+
         } catch (error) {
             // Handle permission denials or hardware missing
             statusElement.textContent = `Status: Camera Error - ${error.message}`;
@@ -57,10 +35,31 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    /**
+     * Captures the current frame from the live video element and draws it 
+     * into the hidden 2D canvas buffer.
+     */
+    function captureFrame() {
+        // Ensure the video stream is active and dimensions are available
+        if (videoElement.videoWidth === 0 || videoElement.videoHeight === 0) {
+            console.warn("Perception Module: Video stream not ready yet.");
+            return;
+        }
+
+        // Sync canvas resolution with the actual hardware stream resolution
+        captureCanvas.width = videoElement.videoWidth;
+        captureCanvas.height = videoElement.videoHeight;
+
+        // Extract the frame by drawing the video element onto the canvas context
+        const context = captureCanvas.getContext("2d");
+        context.drawImage(videoElement, 0, 0, captureCanvas.width, captureCanvas.height);
+
+        console.log("Frame captured successfully.");
+    }
+
+    // Attach event listeners
+    captureBtn.addEventListener("click", captureFrame);
+
     // Start the perception initialization
-    // ============================================================================
-    // Perception Initialization
-    // Requests permission from the browser to access the webcam.
-    // ============================================================================
     initWebcam();
 });
