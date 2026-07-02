@@ -3,6 +3,19 @@ document.addEventListener("DOMContentLoaded", () => {
     const statusElement = document.getElementById("status");
     const captureBtn = document.getElementById("capture-btn");
     const captureCanvas = document.getElementById("capture-canvas");
+    
+    // Initialize WebSocket connection to the backend
+    // Establish a persistent WebSocket connection with the PCOS backend.
+    // This connection will be reused for future real-time communication.
+    const socket = io();
+    
+    socket.on("connect", () => {
+        console.log("Perception Module: WebSocket bridge connected.");
+    });
+
+    socket.on("connect_error", (error) => {
+        console.error("Perception Module: WebSocket connection failed.", error);
+    });
 
     /**
      * Initializes the webcam by requesting user permission and attaching
@@ -10,16 +23,13 @@ document.addEventListener("DOMContentLoaded", () => {
      */
     async function initWebcam() {
         try {
-            // Request video stream from the browser's MediaDevices API
             const stream = await navigator.mediaDevices.getUserMedia({ 
                 video: true, 
-                audio: false // Audio is not required for the vision pipeline
+                audio: false 
             });
 
-            // Attach the hardware stream to the DOM element
             videoElement.srcObject = stream;
 
-            // Update UI state
             statusElement.textContent = "Status: Camera Connected";
             statusElement.classList.remove("error");
             statusElement.classList.add("success");
@@ -27,42 +37,41 @@ document.addEventListener("DOMContentLoaded", () => {
             console.log("Perception Module: Camera successfully initialized.");
 
         } catch (error) {
-            // Handle permission denials or hardware missing
             statusElement.textContent = `Status: Camera Error - ${error.message}`;
             statusElement.classList.add("error");
-            
             console.error("Perception Module Error: Could not access camera.", error);
         }
     }
 
     /**
      * Captures the current frame from the live video element, draws it 
-     * into the hidden 2D canvas buffer, and encodes it to a Base64 string.
+     * into the hidden 2D canvas buffer, encodes it to a Base64 string,
+     * and transmits it to the backend via WebSocket.
      */
     function captureFrame() {
-        // Ensure the video stream is active and dimensions are available
         if (videoElement.videoWidth === 0 || videoElement.videoHeight === 0) {
             console.warn("Perception Module: Video stream not ready yet.");
             return;
         }
 
-        // Sync canvas resolution with the actual hardware stream resolution
         captureCanvas.width = videoElement.videoWidth;
         captureCanvas.height = videoElement.videoHeight;
 
-        // Extract the frame by drawing the video element onto the canvas context
         const context = captureCanvas.getContext("2d");
         context.drawImage(videoElement, 0, 0, captureCanvas.width, captureCanvas.height);
 
-        // Serialize the captured canvas into a Base64 JPEG string.
-        // This prepares the image for future transmission to the backend.
         const base64Image = captureCanvas.toDataURL("image/jpeg");
 
-        // Verification output.
-        // We only confirm generation at this milestone.
-        // Transmission will be implemented later.
         console.log("Base64 generated successfully.");
         console.log("Base64 string length:", base64Image.length);
+
+        // Transmit to backend if socket is connected
+        if (socket.connected) {
+            socket.emit("frame_capture", base64Image);
+            console.log("Base64 sent to backend via WebSocket.");
+        } else {
+            console.warn("Perception Module: Cannot send frame. WebSocket disconnected.");
+        }
     }
 
     // Attach event listeners

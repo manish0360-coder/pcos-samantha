@@ -23,3 +23,17 @@
 - Proactive Procrastination Interceptor (Rule-based triggers on visual logs).
 - Physical-to-Digital Brainstorming (Whiteboard/Paper reading).
 - Emotion-adaptive ambient UI.
+
+## Current Milestone
+
+Milestone 1 – Perception
+
+### Completed
+
+- M1-C1 ✅ Webcam initialization
+- Browser camera permission
+- Live video stream
+
+### Next
+
+- M1-C2 Image capture using Canvas
