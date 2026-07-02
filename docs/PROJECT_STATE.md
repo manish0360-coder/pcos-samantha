@@ -3,13 +3,20 @@
 ## System Status
 - **Current Version:** v0.1.0 (Pre-Alpha)
 - **Architecture Version:** v1.0 (Frozen)
-- **Current Milestone:** Milestone 0 (Project Foundation)
-- **Active Task:** Initializing repository and documentation.
+- **Current Milestone:** Milestone 2 (Vision Pipeline)
+- **Last Completed Milestone:** Milestone 1 (Perception)
+- **Active Task:** Integrating Gemini Vision pipeline.
 
 ## Milestone Tracker
-- [ ] M0: Project Foundation (Active)
-- [ ] M1: Client Webcam Capture
-- [ ] M2: WebSocket Bridge
+- [x] M0: Project Foundation
+- [x] M1: Client Perception Pipeline
+- [ ] M2: Vision LLM Integration
+- [ ] M3: SQLite Memory Storage
+- [ ] M4: Daily Summary Reasoning
+- [ ] M5: Text-to-Speech
+- [ ] M6: Voice Commands
+- [ ] M7: Autonomous Agent Behaviors
+
 - [ ] M3: Vision LLM Integration
 - [ ] M4: SQLite Storage
 - [ ] M5: Logic & Summary Synthesis
@@ -17,7 +24,9 @@
 - [ ] M7: Speech-to-Text Trigger
 
 ## Technical Debt & Known Issues
-- *None logged. Project is in initialization phase.*
+- Browser favicon.ico returns 404 (low priority).
+- No automated tests yet.
+- Error handling can be expanded after MVP.
 
 ## Future Vision (V2 / Stretch Goals)
 - Proactive Procrastination Interceptor (Rule-based triggers on visual logs).
@@ -26,14 +35,53 @@
 
 ## Current Milestone
 
-Milestone 1 – Perception
+### Milestone 1 – Perception
+
+#### Status
+
+✅ COMPLETED
+
+---
 
 ### Completed
 
-- M1-C1 ✅ Webcam initialization
-- Browser camera permission
+#### M1-C1
+
+- Webcam initialization
+- Camera permission handling
 - Live video stream
 
-### Next
+#### M1-C2
 
-- M1-C2 Image capture using Canvas
+- Hidden Canvas buffer
+- Frame extraction
+
+#### M1-C3
+
+- Canvas → Base64 JPEG serialization
+
+#### M1-C4
+
+- Express server
+- Socket.io bridge
+- Client → Server frame transmission
+
+---
+
+### Verification
+
+- Webcam verified
+- Frame capture verified
+- Base64 generation verified
+- WebSocket verified
+- Backend payload verification completed
+
+---
+
+### Next Milestone
+
+Milestone 2 — Vision Pipeline
+
+Goal:
+
+Receive captured frames on the backend and generate natural-language scene descriptions using Gemini Vision.
