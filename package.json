@@ -1,0 +1,32 @@
+{
+  "name": "pcos-samantha",
+  "version": "1.0.0",
+  "description": "Personal Cognitive Operating System (PCOS)",
+  "main": "server/server.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server/server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/manish0360-coder/pcos-samantha.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/manish0360-coder/pcos-samantha/issues"
+  },
+  "homepage": "https://github.com/manish0360-coder/pcos-samantha#readme",
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "socket.io": "^4.8.3",
+    "sqlite3": "^6.0.1"
+  }
+}

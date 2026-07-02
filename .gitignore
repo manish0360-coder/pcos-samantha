@@ -1,0 +1,13 @@
+node_modules/
+
+.env
+
+database.sqlite
+
+*.db
+
+dist/
+
+coverage/
+
+.vscode/settings.json
