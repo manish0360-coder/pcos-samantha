@@ -36,8 +36,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     /**
-     * Captures the current frame from the live video element and draws it 
-     * into the hidden 2D canvas buffer.
+     * Captures the current frame from the live video element, draws it 
+     * into the hidden 2D canvas buffer, and encodes it to a Base64 string.
      */
     function captureFrame() {
         // Ensure the video stream is active and dimensions are available
@@ -54,7 +54,15 @@ document.addEventListener("DOMContentLoaded", () => {
         const context = captureCanvas.getContext("2d");
         context.drawImage(videoElement, 0, 0, captureCanvas.width, captureCanvas.height);
 
-        console.log("Frame captured successfully.");
+        // Serialize the captured canvas into a Base64 JPEG string.
+        // This prepares the image for future transmission to the backend.
+        const base64Image = captureCanvas.toDataURL("image/jpeg");
+
+        // Verification output.
+        // We only confirm generation at this milestone.
+        // Transmission will be implemented later.
+        console.log("Base64 generated successfully.");
+        console.log("Base64 string length:", base64Image.length);
     }
 
     // Attach event listeners
