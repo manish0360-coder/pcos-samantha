@@ -41,6 +41,12 @@ io.on("connection", (socket) => {
         const description = await describeImage(base64Image);
         console.log(`Perception: Vision Output -> "${description}"`);
 
+        // Enforce memory purity: Do not persist infrastructure or API errors
+        if (!description || description === "Error analyzing frame.") {
+            console.log("Infrastructure: Vision observation skipped.");
+            return; 
+        }
+
         try {
             await saveLog(description);
         } catch (error) {
