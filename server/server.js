@@ -19,9 +19,19 @@ const io = new Server(server);
 // Serve frontend
 app.use(express.static(path.join(__dirname, "../client")));
 
+// Read configuration
+let captureInterval = parseInt(process.env.CAPTURE_INTERVAL_MS, 10);
+if (isNaN(captureInterval) || captureInterval <= 0) {
+    captureInterval = 60000; // Fallback to 60 seconds
+}
+
 // Socket.io connection handling
 io.on("connection", (socket) => {
     console.log("Infrastructure: Client connected", socket.id);
+
+    // Send configuration to client
+    socket.emit("system_config", { captureInterval });
+    console.log(`Infrastructure: Sent system_config (Interval: ${captureInterval}ms) to client.`);
 
     // [Perception -> Memory] Pipeline
     socket.on("frame_capture", async (base64Image) => {

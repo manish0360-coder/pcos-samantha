@@ -7,6 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const captureCanvas = document.getElementById("capture-canvas");
     
     const socket = io();
+    let autoCaptureTimer = null;
     
     socket.on("connect", () => {
         console.log("Perception Module: WebSocket bridge connected.");
@@ -14,6 +15,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
     socket.on("connect_error", (error) => {
         console.error("Perception Module: WebSocket connection failed.", error);
+    });
+
+    // Handle incoming configuration for autonomous perception loop
+    socket.on("system_config", (config) => {
+        console.log(`Perception Module: Received system config. Auto-capture interval: ${config.captureInterval}ms`);
+        
+        // Clear any existing timer to prevent overlapping loops
+        if (autoCaptureTimer) clearInterval(autoCaptureTimer);
+        
+        // Start autonomous loop reusing the manual capture logic
+        // Start autonomous perception loop.
+        // Reuses the same capture pipeline as manual capture.
+        autoCaptureTimer = setInterval(captureFrame, config.captureInterval);
     });
 
     // Handle raw memory response
@@ -33,7 +47,7 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
             videoElement.srcObject = stream;
-            statusElement.textContent = "Status: Camera Connected";
+            statusElement.textContent = "Status: Camera Connected (Autonomous)";
             statusElement.classList.remove("error");
             statusElement.classList.add("success");
         } catch (error) {
@@ -44,6 +58,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function captureFrame() {
         if (videoElement.videoWidth === 0 || videoElement.videoHeight === 0) return;
+        
         captureCanvas.width = videoElement.videoWidth;
         captureCanvas.height = videoElement.videoHeight;
         const context = captureCanvas.getContext("2d");
@@ -51,6 +66,7 @@ document.addEventListener("DOMContentLoaded", () => {
         
         if (socket.connected) {
             socket.emit("frame_capture", captureCanvas.toDataURL("image/jpeg"));
+            console.log("Perception Module: Frame captured and emitted to backend.");
         }
     }
 
@@ -65,7 +81,12 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    captureBtn.addEventListener("click", captureFrame);
+    // Manual capture remains functional
+    captureBtn.addEventListener("click", () => {
+        console.log("Perception Module: Manual capture triggered.");
+        captureFrame();
+    });
+    
     memoryBtn.addEventListener("click", requestMemory);
     summarizeBtn.addEventListener("click", requestSummary);
 
