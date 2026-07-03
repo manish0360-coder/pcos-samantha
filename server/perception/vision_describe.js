@@ -38,7 +38,7 @@ async function describeImage(base64DataUrl) {
         return text;
     } catch (error) {
         console.error("Perception API Error:", error.message);
-        return "Error analyzing frame.";
+        throw error; // Bubble up operational failures to Infrastructure
     }
 }
 

@@ -47,7 +47,7 @@ ${contextString}
 
     } catch (error) {
         console.error("Reasoning Error: Failed to generate summary.", error.message);
-        return "I'm sorry, I encountered an error while trying to summarize your day.";
+        throw error; // Bubble up operational failures to Infrastructure
     }
 }
 

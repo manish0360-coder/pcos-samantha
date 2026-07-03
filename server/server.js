@@ -20,14 +20,29 @@ const io = new Server(server);
 // Serve frontend
 app.use(express.static(path.join(__dirname, "../client")));
 
-// Read configuration
+// Configuration
 let captureInterval = parseInt(process.env.CAPTURE_INTERVAL_MS, 10);
 if (isNaN(captureInterval) || captureInterval <= 0) {
     captureInterval = 60000; // Fallback to 60 seconds
 }
 
-// State (RAM)
+// System State (Infrastructure Memory)
 let lastObservation = "";
+let apiCooldownUntil = 0; // Epoch timestamp for Quota Backoff
+
+/**
+ * Parses API errors and engages global cooldown if quota is exceeded.
+ */
+function handleApiError(error) {
+    if (error.message.includes("429") || error.status === 429 || error.message.toLowerCase().includes("quota")) {
+        // Attempt to parse Google's exact retry instruction, default to 60s
+        const delayMatch = error.message.match(/Retry in (\d+) seconds/i);
+        const cooldownMs = delayMatch ? parseInt(delayMatch[1], 10) * 1000 : 60000;
+        
+        apiCooldownUntil = Date.now() + cooldownMs;
+        console.warn(`Infrastructure: API Quota exceeded. Cooldown engaged for ${cooldownMs / 1000}s.`);
+    }
+}
 
 // Socket.io connection handling
 io.on("connection", (socket) => {
@@ -39,27 +54,34 @@ io.on("connection", (socket) => {
 
     // [Perception -> Observation -> Memory] Pipeline
     socket.on("frame_capture", async (base64Image) => {
-        console.log("Infrastructure: Received frame_capture event.");
-        console.log("Perception: Analyzing frame via Gemini Vision...");
-        
-        const description = await describeImage(base64Image);
-        console.log(`Perception: Vision Output -> "${description}"`);
-
-        // Handle Vision Errors
-        if (!description || description === "Error analyzing frame.") {
-            console.log("Infrastructure: Vision observation skipped (Error).");
-            return; 
+        // 1. Check Infrastructure Cooldown
+        if (Date.now() < apiCooldownUntil) {
+            console.log("Infrastructure: Quota backoff active. Dropping frame.");
+            return;
         }
 
-        // Observation Layer: Filter duplicates
-        const decision = evaluateObservation(lastObservation, description);
+        console.log("Infrastructure: Received frame_capture event.");
+        let description;
         
+        // 2. Perception execution
+        try {
+            console.log("Perception: Analyzing frame via Gemini Vision...");
+            description = await describeImage(base64Image);
+        } catch (error) {
+            handleApiError(error);
+            return; // Abort pipeline: DO NOT save errors to memory
+        }
+
+        console.log(`Perception: Vision Output -> "${description}"`);
+
+        // 3. Observation Filter
+        const decision = evaluateObservation(lastObservation, description);
         if (decision === "SKIP") {
             console.log("Observation: State unchanged. Skipping memory storage.");
             return;
         }
 
-        // Memory Layer: Persist novel observations
+        // 4. Memory Persistence
         try {
             await saveLog(description);
             lastObservation = description; // Update state in RAM
@@ -81,14 +103,24 @@ io.on("connection", (socket) => {
 
     // [Memory -> Reasoning] Pipeline
     socket.on("request_memory_summary", async () => {
+        // 1. Check Infrastructure Cooldown
+        if (Date.now() < apiCooldownUntil) {
+            console.log("Infrastructure: Quota backoff active. Rejecting summary request.");
+            socket.emit("memory_summary_response", "I am taking a brief operational pause due to rate limits. Please try again shortly.");
+            return;
+        }
+
         console.log("Infrastructure: Received request_memory_summary event.");
+        
+        // 2. Execution
         try {
             const logs = await getRecentLogs(20);
             const summary = await generateSummary(logs);
             socket.emit("memory_summary_response", summary);
             console.log("Infrastructure: Emitted memory_summary_response to client.");
         } catch (error) {
-            console.error("Infrastructure Error: Failed to generate/route summary.", error.message);
+            handleApiError(error);
+            socket.emit("memory_summary_response", "I encountered an operational delay. Please try again later.");
         }
     });
 
