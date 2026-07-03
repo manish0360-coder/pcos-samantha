@@ -8,6 +8,9 @@ const path = require("path");
 // Import the Vision Perception module
 const { describeImage } = require("./perception/vision_describe");
 
+// Import the Memory module
+const { saveLog } = require("./memory/store");
+
 // Initialize Express and HTTP server
 const app = express();
 const server = http.createServer(app);
@@ -31,8 +34,16 @@ io.on("connection", (socket) => {
         console.log("Perception: Analyzing frame via Gemini Vision...");
         const description = await describeImage(base64Image);
         
-        // Log the reasoning output
+        // Log the perception output
         console.log(`Perception: Vision Output -> "${description}"`);
+
+        // Persist the description to SQLite memory
+        // Route perception output into long-term memory.
+        try {
+            await saveLog(description);
+        } catch (error) {
+            console.error("Infrastructure Error: Failed to route to memory.", error.message);
+        }
     });
 
     socket.on("disconnect", () => {

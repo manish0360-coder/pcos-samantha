@@ -85,3 +85,34 @@ Milestone 2 — Vision Pipeline
 Goal:
 
 Receive captured frames on the backend and generate natural-language scene descriptions using Gemini Vision.
+
+## System Status
+
+- **Current Version:** v0.1.0 (Pre-Alpha)
+- **Architecture Version:** v1.0 (Frozen)
+- **Current Milestone:** Milestone 3 (Memory Layer)
+- **Last Completed Milestone:** Milestone 2 (Vision Pipeline)
+- **Active Task:** Building persistent visual memory.
+
+---
+
+## Milestone Tracker
+
+- [x] M0: Project Foundation
+- [x] M1: Client Perception Pipeline
+- [x] M2: Vision LLM Integration
+- [ ] M3: SQLite Memory Storage
+- [x] M4: SQLite Storage
+- [ ] M5: Text-to-Speech
+- [ ] M6: Voice Commands
+- [ ] M7: Autonomous Agent Behaviors
+
+### Completed
+
+- M4-C1 SQLite database initialized
+- Visual observations stored permanently
+- Episodic memory pipeline operational
+
+### Next
+
+- M5-C1 Retrieve memory logs from SQLite
