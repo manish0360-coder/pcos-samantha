@@ -16,9 +16,7 @@
             height: 100vh;
             margin: 0;
         }
-        h1 {
-            margin-bottom: 10px;
-        }
+        h1 { margin-bottom: 10px; }
         #status {
             margin-bottom: 20px;
             padding: 8px 16px;
@@ -26,12 +24,8 @@
             border-radius: 4px;
             font-family: monospace;
         }
-        .error {
-            color: #ff6b6b;
-        }
-        .success {
-            color: #51cf66;
-        }
+        .error { color: #ff6b6b; }
+        .success { color: #51cf66; }
         video {
             background-color: #000;
             border: 2px solid #333;
@@ -56,39 +50,27 @@
             cursor: pointer;
             transition: background-color 0.2s;
         }
-        button:hover {
-            background-color: #0056b3;
-        }
-        /* Temporary memory retrieval button styling */
-        #memory-btn {
-            background-color: #6f42c1;
-        }
-        #memory-btn:hover {
-            background-color: #5936a2;
-        }
-        /* The canvas exists strictly for data extraction, not presentation */
-        #capture-canvas {
-            display: none;
-        }
+        button:hover { background-color: #0056b3; }
+        #memory-btn { background-color: #6f42c1; }
+        #memory-btn:hover { background-color: #5936a2; }
+        #summarize-btn { background-color: #28a745; }
+        #summarize-btn:hover { background-color: #218838; }
+        #capture-canvas { display: none; }
     </style>
 </head>
 <body>
 
     <h1>PCOS Perception Eye</h1>
-    
     <div id="status">Requesting camera access...</div>
-    
     <video id="webcam" autoplay playsinline></video>
 
     <div class="button-group">
         <button id="capture-btn">Capture Frame</button>
         <button id="memory-btn">Show Recent Memory</button>
+        <button id="summarize-btn">Summarize Memory</button>
     </div>
 
-    <!-- Hidden canvas used as an image buffer -->
     <canvas id="capture-canvas"></canvas>
-
-    <!-- Load Socket.io client script directly from the server -->
     <script src="/socket.io/socket.io.js"></script>
     <script src="app.js"></script>
 </body>

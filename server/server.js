@@ -1,44 +1,36 @@
-require("dotenv").config(); // Load environment variables from .env
+require("dotenv").config(); // Load environment variables
 
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const path = require("path");
 
-// Import the Vision Perception module
+// Import Modules
 const { describeImage } = require("./perception/vision_describe");
-
-// Import Memory modules
 const { saveLog } = require("./memory/store");
 const { getRecentLogs } = require("./memory/retrieve");
+const { generateSummary } = require("./reasoning/summarize");
 
 // Initialize Express and HTTP server
 const app = express();
 const server = http.createServer(app);
-
-// Initialize Socket.io
 const io = new Server(server);
 
-// Serve the frontend static files from the /client directory
+// Serve frontend
 app.use(express.static(path.join(__dirname, "../client")));
 
 // Socket.io connection handling
 io.on("connection", (socket) => {
     console.log("Infrastructure: Client connected", socket.id);
 
-    // Listen for incoming frames from the perception module
+    // [Perception -> Memory] Pipeline
     socket.on("frame_capture", async (base64Image) => {
         console.log("Infrastructure: Received frame_capture event.");
-        console.log(`Payload size: ${base64Image.length} characters.`);
-
-        // Pass the image to the Vision API for decoding
         console.log("Perception: Analyzing frame via Gemini Vision...");
-        const description = await describeImage(base64Image);
         
-        // Log the perception output
+        const description = await describeImage(base64Image);
         console.log(`Perception: Vision Output -> "${description}"`);
 
-        // Persist the description to SQLite memory
         try {
             await saveLog(description);
         } catch (error) {
@@ -46,17 +38,27 @@ io.on("connection", (socket) => {
         }
     });
 
-    // Listen for requests to retrieve episodic memory
-    // Temporary debug endpoint.
-    // Used only for validating episodic memory retrieval.
+    // [Memory Retrieval - Raw]
     socket.on("request_recent_logs", async () => {
         console.log("Infrastructure: Received request_recent_logs event.");
         try {
             const logs = await getRecentLogs(20);
             socket.emit("recent_logs_response", logs);
-            console.log("Infrastructure: Emitted recent_logs_response back to client.");
         } catch (error) {
             console.error("Infrastructure Error: Failed to retrieve logs.", error.message);
+        }
+    });
+
+    // [Memory -> Reasoning] Pipeline
+    socket.on("request_memory_summary", async () => {
+        console.log("Infrastructure: Received request_memory_summary event.");
+        try {
+            const logs = await getRecentLogs(20);
+            const summary = await generateSummary(logs);
+            socket.emit("memory_summary_response", summary);
+            console.log("Infrastructure: Emitted memory_summary_response to client.");
+        } catch (error) {
+            console.error("Infrastructure Error: Failed to generate/route summary.", error.message);
         }
     });
 
