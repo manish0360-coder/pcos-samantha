@@ -8,8 +8,9 @@ const path = require("path");
 // Import the Vision Perception module
 const { describeImage } = require("./perception/vision_describe");
 
-// Import the Memory module
+// Import Memory modules
 const { saveLog } = require("./memory/store");
+const { getRecentLogs } = require("./memory/retrieve");
 
 // Initialize Express and HTTP server
 const app = express();
@@ -38,11 +39,24 @@ io.on("connection", (socket) => {
         console.log(`Perception: Vision Output -> "${description}"`);
 
         // Persist the description to SQLite memory
-        // Route perception output into long-term memory.
         try {
             await saveLog(description);
         } catch (error) {
             console.error("Infrastructure Error: Failed to route to memory.", error.message);
+        }
+    });
+
+    // Listen for requests to retrieve episodic memory
+    // Temporary debug endpoint.
+    // Used only for validating episodic memory retrieval.
+    socket.on("request_recent_logs", async () => {
+        console.log("Infrastructure: Received request_recent_logs event.");
+        try {
+            const logs = await getRecentLogs(20);
+            socket.emit("recent_logs_response", logs);
+            console.log("Infrastructure: Emitted recent_logs_response back to client.");
+        } catch (error) {
+            console.error("Infrastructure Error: Failed to retrieve logs.", error.message);
         }
     });
 

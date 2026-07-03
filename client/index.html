@@ -40,8 +40,12 @@
             max-width: 90vw;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
         }
-        button {
+        .button-group {
+            display: flex;
+            gap: 15px;
             margin-top: 20px;
+        }
+        button {
             padding: 10px 24px;
             font-size: 16px;
             font-weight: bold;
@@ -54,6 +58,13 @@
         }
         button:hover {
             background-color: #0056b3;
+        }
+        /* Temporary memory retrieval button styling */
+        #memory-btn {
+            background-color: #6f42c1;
+        }
+        #memory-btn:hover {
+            background-color: #5936a2;
         }
         /* The canvas exists strictly for data extraction, not presentation */
         #capture-canvas {
@@ -69,7 +80,10 @@
     
     <video id="webcam" autoplay playsinline></video>
 
-    <button id="capture-btn">Capture Frame</button>
+    <div class="button-group">
+        <button id="capture-btn">Capture Frame</button>
+        <button id="memory-btn">Show Recent Memory</button>
+    </div>
 
     <!-- Hidden canvas used as an image buffer -->
     <canvas id="capture-canvas"></canvas>

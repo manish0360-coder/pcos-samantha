@@ -2,11 +2,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const videoElement = document.getElementById("webcam");
     const statusElement = document.getElementById("status");
     const captureBtn = document.getElementById("capture-btn");
+    const memoryBtn = document.getElementById("memory-btn");
     const captureCanvas = document.getElementById("capture-canvas");
     
     // Initialize WebSocket connection to the backend
-    // Establish a persistent WebSocket connection with the PCOS backend.
-    // This connection will be reused for future real-time communication.
     const socket = io();
     
     socket.on("connect", () => {
@@ -15,6 +14,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     socket.on("connect_error", (error) => {
         console.error("Perception Module: WebSocket connection failed.", error);
+    });
+
+    /**
+     * Listen for memory retrieval responses from the backend
+     */
+    socket.on("recent_logs_response", (logs) => {
+        console.log("Perception Module: Received recent memory logs.");
+        // Render directly to console table as required
+        console.table(logs);
     });
 
     /**
@@ -74,8 +82,21 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    /**
+     * Requests recent memory logs from the backend via WebSocket.
+     */
+    function requestMemory() {
+        if (socket.connected) {
+            socket.emit("request_recent_logs");
+            console.log("Perception Module: Requested recent memory logs.");
+        } else {
+            console.warn("Perception Module: Cannot request memory. WebSocket disconnected.");
+        }
+    }
+
     // Attach event listeners
     captureBtn.addEventListener("click", captureFrame);
+    memoryBtn.addEventListener("click", requestMemory);
 
     // Start the perception initialization
     initWebcam();
