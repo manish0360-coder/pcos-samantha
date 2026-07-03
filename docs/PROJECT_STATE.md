@@ -116,3 +116,20 @@ Receive captured frames on the backend and generate natural-language scene descr
 ### Next
 
 - M5-C1 Retrieve memory logs from SQLite
+
+## Milestone M3 Progress
+
+### ✅ M3-C1 — Autonomous Perception Loop
+Status: Completed
+
+- Client receives capture interval from server configuration.
+- Automatic frame capture runs on a configurable timer.
+- Manual capture remains fully functional.
+- Capture pipeline reuses the existing `captureFrame()` implementation.
+
+### ✅ M3-C2 — Memory Purity
+Status: Completed
+
+- Infrastructure/API failures are no longer stored in episodic memory.
+- Invalid vision observations are skipped before persistence.
+- Episodic memory now stores only valid observations.

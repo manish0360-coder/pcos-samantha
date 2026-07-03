@@ -7,6 +7,7 @@ const path = require("path");
 
 // Import Modules
 const { describeImage } = require("./perception/vision_describe");
+const { evaluateObservation } = require("./observation/filter");
 const { saveLog } = require("./memory/store");
 const { getRecentLogs } = require("./memory/retrieve");
 const { generateSummary } = require("./reasoning/summarize");
@@ -25,6 +26,9 @@ if (isNaN(captureInterval) || captureInterval <= 0) {
     captureInterval = 60000; // Fallback to 60 seconds
 }
 
+// State (RAM)
+let lastObservation = "";
+
 // Socket.io connection handling
 io.on("connection", (socket) => {
     console.log("Infrastructure: Client connected", socket.id);
@@ -33,7 +37,7 @@ io.on("connection", (socket) => {
     socket.emit("system_config", { captureInterval });
     console.log(`Infrastructure: Sent system_config (Interval: ${captureInterval}ms) to client.`);
 
-    // [Perception -> Memory] Pipeline
+    // [Perception -> Observation -> Memory] Pipeline
     socket.on("frame_capture", async (base64Image) => {
         console.log("Infrastructure: Received frame_capture event.");
         console.log("Perception: Analyzing frame via Gemini Vision...");
@@ -41,14 +45,24 @@ io.on("connection", (socket) => {
         const description = await describeImage(base64Image);
         console.log(`Perception: Vision Output -> "${description}"`);
 
-        // Enforce memory purity: Do not persist infrastructure or API errors
+        // Handle Vision Errors
         if (!description || description === "Error analyzing frame.") {
-            console.log("Infrastructure: Vision observation skipped.");
+            console.log("Infrastructure: Vision observation skipped (Error).");
             return; 
         }
 
+        // Observation Layer: Filter duplicates
+        const decision = evaluateObservation(lastObservation, description);
+        
+        if (decision === "SKIP") {
+            console.log("Observation: State unchanged. Skipping memory storage.");
+            return;
+        }
+
+        // Memory Layer: Persist novel observations
         try {
             await saveLog(description);
+            lastObservation = description; // Update state in RAM
         } catch (error) {
             console.error("Infrastructure Error: Failed to route to memory.", error.message);
         }
