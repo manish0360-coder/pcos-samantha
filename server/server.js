@@ -1,5 +1,8 @@
 require("dotenv").config(); // Load environment variables
 
+// Load Central AI Provider Configuration
+const aiConfig = require("./config/providers");
+
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
