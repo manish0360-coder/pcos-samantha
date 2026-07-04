@@ -4,6 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const captureBtn = document.getElementById("capture-btn");
     const memoryBtn = document.getElementById("memory-btn");
     const summarizeBtn = document.getElementById("summarize-btn");
+    const micBtn = document.getElementById("mic-btn");
     const captureCanvas = document.getElementById("capture-canvas");
     
     const socket = io();
@@ -41,6 +42,17 @@ document.addEventListener("DOMContentLoaded", () => {
         console.log("================ SUMMARY ================");
         console.log(`Samantha: "${summary}"`);
         console.log("=========================================");
+    });
+
+    // Handle action audio response
+    socket.on("memory_summary_audio", (base64Audio) => {
+        console.log("Perception Module: Received audio payload. Playing speech...");
+
+        const audio = new Audio(`data:audio/mpeg;base64,${base64Audio}`);
+
+        audio.play().catch((err) => {
+            console.error("Client Error: Browser blocked audio playback.", err);
+        });
     });
 
     async function initWebcam() {
@@ -81,6 +93,44 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    // --- Speech Recognition (Ears) ---
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = null;
+    
+    if (SpeechRecognition) {
+        recognition = new SpeechRecognition();
+        recognition.continuous = false; // Listen for one command at a time
+        recognition.interimResults = false;
+        
+        recognition.onstart = () => {
+            console.log("Perception Module: Microphone listening...");
+            micBtn.textContent = "🔴 Listening...";
+        };
+        
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript.toLowerCase();
+            console.log(`Perception Module: Heard -> "${transcript}"`);
+            
+            // Check for trigger words
+            if (transcript.includes("summarize") || transcript.includes("day")) {
+                console.log("Perception Module: Trigger word detected. Requesting summary.");
+                requestSummary();
+            }
+        };
+        
+        recognition.onerror = (event) => {
+            console.error("Perception Module: Microphone error:", event.error);
+        };
+        
+        recognition.onend = () => {
+            micBtn.textContent = "🎙️ Start Listening";
+        };
+    } else {
+        console.warn("Perception Module: Speech Recognition API not supported in this browser.");
+        micBtn.disabled = true;
+        micBtn.title = "Browser not supported";
+    }
+
     // Manual capture remains functional
     captureBtn.addEventListener("click", () => {
         console.log("Perception Module: Manual capture triggered.");
@@ -89,6 +139,10 @@ document.addEventListener("DOMContentLoaded", () => {
     
     memoryBtn.addEventListener("click", requestMemory);
     summarizeBtn.addEventListener("click", requestSummary);
+
+    if (recognition) {
+        micBtn.addEventListener("click", () => recognition.start());
+    }
 
     initWebcam();
 });

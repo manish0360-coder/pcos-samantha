@@ -11,6 +11,7 @@ const { evaluateObservation } = require("./observation/filter");
 const { saveLog } = require("./memory/store");
 const { getRecentLogs } = require("./memory/retrieve");
 const { generateSummary } = require("./reasoning/summarize");
+const { generateSpeech } = require("./action/tts");
 
 // Initialize Express and HTTP server
 const app = express();
@@ -118,6 +119,16 @@ io.on("connection", (socket) => {
             const summary = await generateSummary(logs);
             socket.emit("memory_summary_response", summary);
             console.log("Infrastructure: Emitted memory_summary_response to client.");
+
+            // [Reasoning -> Action] Pipeline
+            try {
+                console.log("Action: Generating speech for summary...");
+                const audioBase64 = await generateSpeech(summary);
+                socket.emit("memory_summary_audio", audioBase64);
+                console.log("Infrastructure: Emitted memory_summary_audio to client.");
+            } catch (ttsError) {
+                console.warn("Infrastructure: Action (TTS) skipped. Reason:", ttsError.message);
+            }
         } catch (error) {
             handleApiError(error);
             socket.emit("memory_summary_response", "I encountered an operational delay. Please try again later.");
