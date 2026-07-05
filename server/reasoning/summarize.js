@@ -1,4 +1,5 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+const aiConfig = require("../config/providers");
 
 // Initialize Google Generative AI SDK
 const apiKey = process.env.GEMINI_API_KEY;
@@ -14,6 +15,10 @@ const genAI = new GoogleGenerativeAI(apiKey);
  * @returns {Promise<string>}
  */
 async function generateSummary(logs) {
+    if (aiConfig.reasoning !== "gemini") {
+        throw new Error(`Unsupported REASONING_PROVIDER configured: ${aiConfig.reasoning}`);
+    }
+    
     if (!logs || logs.length === 0) {
         return "I don't have any recent memories to summarize.";
     }
