@@ -39,6 +39,49 @@ ${contextString}
     return response.text().trim();
 }
 
+/**
+ * Provider Adapter: Ollama Reasoning (Local)
+ * Handles local LLM formatting and HTTP execution via native fetch.
+ */
+async function ollamaReasoningAdapter(logs) {
+    const contextString = logs
+        .map(log => `[${log.timestamp}] ${log.description}`)
+        .join("\n");
+
+    const prompt = `
+You are Samantha. 
+Summarize the user's recent activities naturally. 
+Do not invent facts. 
+Only use the supplied memory logs. 
+Maximum 120 words.
+
+Memory Logs:
+${contextString}
+    `;
+
+    console.log("Reasoning: Generating summary via Local Ollama...");
+    
+    const response = await fetch("http://localhost:11434/api/generate", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            model: process.env.OLLAMA_MODEL || "qwen2.5:3b",
+            prompt: prompt,
+            stream: false
+        })
+    });
+
+    if (!response.ok) {
+        throw new Error(`Ollama API failed with HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log("Reasoning: Summary generated successfully.");
+    return data.response.trim();
+}
+
 const adapters = {
     gemini: geminiReasoningAdapter
 };
