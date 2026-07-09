@@ -1,3 +1,12 @@
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const aiConfig = require("../config/providers");
+
+const apiKey = process.env.GEMINI_API_KEY;
+if (!apiKey) {
+    console.warn("WARNING: GEMINI_API_KEY is not set.");
+}
+const genAI = new GoogleGenerativeAI(apiKey);
+
 /**
  * Provider Adapter: Gemini Reasoning
  * Handles Google Generative AI specific formatting and execution.
@@ -51,3 +60,5 @@ async function generateSummary(logs) {
 
     throw new Error(`Unsupported REASONING_PROVIDER configured: ${provider}`);
 }
+
+module.exports = { generateSummary };
