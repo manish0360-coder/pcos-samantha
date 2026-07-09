@@ -39,6 +39,10 @@ ${contextString}
     return response.text().trim();
 }
 
+const adapters = {
+    gemini: geminiReasoningAdapter
+};
+
 /**
  * Reasoning Service Layer
  * Routes the logs to the correct provider adapter based on configuration.
@@ -53,12 +57,13 @@ async function generateSummary(logs) {
     }
 
     const provider = aiConfig.reasoning;
+    const adapter = adapters[provider];
 
-    if (provider === "gemini") {
-        return await geminiReasoningAdapter(logs);
+    if (!adapter) {
+        throw new Error(`Unsupported REASONING_PROVIDER configured: ${provider}`);
     }
 
-    throw new Error(`Unsupported REASONING_PROVIDER configured: ${provider}`);
+    return await adapter(logs);
 }
 
 module.exports = { generateSummary };

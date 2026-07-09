@@ -29,6 +29,10 @@ async function geminiVisionAdapter(base64DataUrl) {
     return response.text().trim();
 }
 
+const adapters = {
+    gemini: geminiVisionAdapter
+};
+
 /**
  * Vision Service Layer
  * Routes the image to the correct provider adapter based on configuration.
@@ -38,12 +42,13 @@ async function geminiVisionAdapter(base64DataUrl) {
  */
 async function describeImage(base64DataUrl) {
     const provider = aiConfig.vision;
+    const adapter = adapters[provider];
 
-    if (provider === "gemini") {
-        return await geminiVisionAdapter(base64DataUrl);
+    if (!adapter) {
+        throw new Error(`Unsupported VISION_PROVIDER configured: ${provider}`);
     }
 
-    throw new Error(`Unsupported VISION_PROVIDER configured: ${provider}`);
+    return await adapter(base64DataUrl);
 }
 
 module.exports = { describeImage };
