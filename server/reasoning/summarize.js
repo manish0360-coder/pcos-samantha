@@ -99,7 +99,8 @@ ${contextString}
 }
 
 const adapters = {
-    gemini: geminiReasoningAdapter
+    gemini: geminiReasoningAdapter,
+    ollama: ollamaReasoningAdapter
 };
 
 /**
