@@ -23,10 +23,27 @@ async function geminiVisionAdapter(base64DataUrl) {
         }
     };
 
-    // Operational failures bubble up to Infrastructure
-    const result = await model.generateContent([prompt, imagePart]);
-    const response = await result.response;
-    return response.text().trim();
+    let attempt = 0;
+    const maxRetries = 1;
+    const baseDelayMs = 2000;
+
+    while (attempt <= maxRetries) {
+        try {
+            const result = await model.generateContent([prompt, imagePart]);
+            const response = await result.response;
+            return response.text().trim();
+        } catch (error) {
+            const isTransient = error.status >= 500 || /network|timeout|503|502|500|fetch/i.test(error.message);
+            if (isTransient && attempt < maxRetries) {
+                attempt++;
+                const backoff = baseDelayMs * Math.pow(2, attempt - 1);
+                console.warn(`Perception: Transient API error (${error.message}). Retrying in ${backoff}ms...`);
+                await new Promise(resolve => setTimeout(resolve, backoff));
+            } else {
+                throw error; // Bubbles up to Infrastructure
+            }
+        }
+    }
 }
 
 const adapters = {
