@@ -8,6 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const captureCanvas = document.getElementById("capture-canvas");
     
     const socket = io();
+    let reasoningBusy = false; // Dedicated client state for voice trigger guard
     let autoCaptureTimer = null;
     
     socket.on("connect", () => {
@@ -42,6 +43,7 @@ document.addEventListener("DOMContentLoaded", () => {
         console.log("================ SUMMARY ================");
         console.log(`Samantha: "${summary}"`);
         console.log("=========================================");
+        unlockUI();
     });
 
     // Handle action audio response
@@ -86,9 +88,26 @@ document.addEventListener("DOMContentLoaded", () => {
         if (socket.connected) socket.emit("request_recent_logs");
     }
 
+    function unlockUI() {
+        reasoningBusy = false;
+        summarizeBtn.disabled = false;
+        if (typeof micBtn !== 'undefined' && micBtn) micBtn.disabled = false;
+        statusElement.textContent = "Status: Camera Connected";
+    }
+
     function requestSummary() {
+        // Voice Trigger Guard: Prevent concurrent requests using dedicated state
+        if (reasoningBusy) {
+            console.warn("Perception Module: I'm already thinking. Please wait.");
+            return;
+        }
+
         if (socket.connected) {
             console.log("Perception Module: Requesting memory summary...");
+            reasoningBusy = true;
+            summarizeBtn.disabled = true;
+            if (typeof micBtn !== 'undefined' && micBtn) micBtn.disabled = true;
+            statusElement.textContent = "Status: Thinking...";
             socket.emit("request_memory_summary");
         }
     }
