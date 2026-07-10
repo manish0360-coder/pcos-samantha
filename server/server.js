@@ -33,6 +33,7 @@ if (isNaN(captureInterval) || captureInterval <= 0) {
 // System State (Infrastructure Memory)
 let lastObservation = "";
 let apiCooldownUntil = 0; // Epoch timestamp for Quota Backoff
+let isReasoning = false; // Mutex to prevent hardware overload during local inference
 
 /**
  * Parses API errors and engages global cooldown if quota is exceeded.
@@ -114,15 +115,23 @@ io.on("connection", (socket) => {
             return;
         }
 
+        // 2. Check Reasoning Mutex
+        if (isReasoning) {
+            console.log("Infrastructure: Reasoning engine busy. Rejecting concurrent request.");
+            socket.emit("memory_summary_response", "I am already processing a thought. Give me a moment.");
+            return;
+        }
+
         console.log("Infrastructure: Received request_memory_summary event.");
+        isReasoning = true;
         
-        // 2. Execution
+        // 3. Execution
         try {
             const logs = await getRecentLogs(20);
             const summary = await generateSummary(logs);
             socket.emit("memory_summary_response", summary);
             console.log("Infrastructure: Emitted memory_summary_response to client.");
-
+            
             // [Reasoning -> Action] Pipeline
             try {
                 console.log("Action: Generating speech for summary...");
@@ -135,6 +144,8 @@ io.on("connection", (socket) => {
         } catch (error) {
             handleApiError(error);
             socket.emit("memory_summary_response", "I encountered an operational delay. Please try again later.");
+        } finally {
+            isReasoning = false;
         }
     });
 
