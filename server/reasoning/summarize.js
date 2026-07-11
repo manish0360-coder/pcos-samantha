@@ -1,22 +1,22 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const aiConfig = require("../config/providers");
 
-const apiKey = process.env.GEMINI_API_KEY;
-if (!apiKey) {
-    console.warn("WARNING: GEMINI_API_KEY is not set.");
-}
-const genAI = new GoogleGenerativeAI(apiKey);
 
 /**
  * Provider Adapter: Gemini Reasoning
  * Handles Google Generative AI specific formatting and execution.
  */
 async function geminiReasoningAdapter(logs) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) console.warn("WARNING: GEMINI_API_KEY is not set.");
+    const genAI = new GoogleGenerativeAI(apiKey || "dummy-key");
+    const modelName = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+
     const contextString = logs
         .map(log => `[${log.timestamp}] ${log.description}`)
         .join("\n");
 
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: modelName });
 
     const prompt = `
 You are Samantha. 
