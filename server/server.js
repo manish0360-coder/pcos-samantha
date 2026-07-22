@@ -15,6 +15,7 @@ const { saveLog } = require("./memory/store");
 const { getRecentLogs } = require("./memory/retrieve");
 const { searchMemory } = require("./memory/search");
 const { parseIntentToFilters } = require("./intelligence/intent_parser");
+const conversationContext = require("./intelligence/context");
 const { generateSummary } = require("./reasoning/summarize");
 const { answerQuestion } = require("./reasoning/answer");
 const { generateSpeech } = require("./action/tts");
@@ -159,6 +160,8 @@ io.on("connection", (socket) => {
             return;
         }
 
+        conversationContext.addTurn("user", question);
+
         console.log(`Infrastructure: Received ask_question event -> "${question}"`);
         isReasoning = true;
         
@@ -175,6 +178,7 @@ io.on("connection", (socket) => {
             // 3. Reasoning Layer
             const answer = await answerQuestion({ question, evidence });
             socket.emit("memory_summary_response", answer);
+            conversationContext.addTurn("assistant", answer);
             
             // 4. Action Layer
             try {
