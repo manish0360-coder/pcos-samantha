@@ -13,7 +13,10 @@ const { describeImage } = require("./perception/vision_describe");
 const { evaluateObservation } = require("./observation/filter");
 const { saveLog } = require("./memory/store");
 const { getRecentLogs } = require("./memory/retrieve");
+const { searchMemory } = require("./memory/search");
+const { parseIntentToFilters } = require("./intelligence/intent_parser");
 const { generateSummary } = require("./reasoning/summarize");
+const { answerQuestion } = require("./reasoning/answer");
 const { generateSpeech } = require("./action/tts");
 
 // Initialize Express and HTTP server
@@ -35,9 +38,47 @@ let lastObservation = "";
 let apiCooldownUntil = 0; // Epoch timestamp for Quota Backoff
 let isReasoning = false; // Mutex to prevent hardware overload during local inference
 
+
+
+/**
+ * Orchestration Helper: Resolves symbolic timeframes into concrete timestamps for the Memory Layer.
+ */
+function resolveSymbolicTime(filters) {
+    if (!filters.timeframe) return filters; // Return original if no time specified
+
+    const now = new Date();
+    let from, to;
+
+    switch (filters.timeframe) {
+        case "today":
+            from = new Date(now.setHours(0, 0, 0, 0));
+            break;
+        case "yesterday":
+            to = new Date(now.setHours(0, 0, 0, 0));
+            now.setDate(now.getDate() - 1);
+            from = new Date(now.setHours(0, 0, 0, 0));
+            break;
+        case "this_week":
+            from = new Date(now.setDate(now.getDate() - 7));
+            from.setHours(0, 0, 0, 0);
+            break;
+    }
+    
+    // Create a new object to avoid mutating the original
+    const concreteFilters = { ...filters };
+    if (from) concreteFilters.from = from.toISOString();
+    if (to) concreteFilters.to = to.toISOString();
+    
+    // The symbolic timeframe is no longer needed by downstream systems
+    delete concreteFilters.timeframe;
+
+    return concreteFilters;
+}
+
 /**
  * Parses API errors and engages global cooldown if quota is exceeded.
  */
+
 function handleApiError(error) {
     if (error.message.includes("429") || error.status === 429 || error.message.toLowerCase().includes("quota")) {
         // Attempt to parse Google's exact retry instruction, default to 60s
@@ -107,6 +148,49 @@ io.on("connection", (socket) => {
     });
 
     // [Memory -> Reasoning] Pipeline
+    // [Intent -> Memory -> Reasoning] Q&A Pipeline
+    socket.on("ask_question", async (question) => {
+        if (Date.now() < apiCooldownUntil) {
+            socket.emit("memory_summary_response", "I am currently on cooldown. Please wait.");
+            return;
+        }
+        if (isReasoning) {
+            socket.emit("memory_summary_response", "I am already thinking. Give me a moment.");
+            return;
+        }
+
+        console.log(`Infrastructure: Received ask_question event -> "${question}"`);
+        isReasoning = true;
+        
+        try {
+            // 1. Intelligence Layer: Parse intent into symbolic filters
+            const symbolicFilters = parseIntentToFilters(question);
+            
+            // 2. Orchestration Layer: Resolve symbolic time into concrete timestamps
+            const concreteFilters = resolveSymbolicTime(symbolicFilters);
+            
+            // 3. Memory Layer: Retrieve evidence using concrete filters
+            const evidence = await searchMemory(concreteFilters);
+            
+            // 3. Reasoning Layer
+            const answer = await answerQuestion({ question, evidence });
+            socket.emit("memory_summary_response", answer);
+            
+            // 4. Action Layer
+            try {
+                const audioBase64 = await generateSpeech(answer);
+                socket.emit("memory_summary_audio", audioBase64);
+            } catch (ttsError) {
+                console.warn("Infrastructure: Action (TTS) skipped.", ttsError.message);
+            }
+        } catch (error) {
+            handleApiError(error);
+            socket.emit("memory_summary_response", "I encountered an operational delay.");
+        } finally {
+            isReasoning = false;
+        }
+    });
+
     socket.on("request_memory_summary", async () => {
         // 1. Check Infrastructure Cooldown
         if (Date.now() < apiCooldownUntil) {

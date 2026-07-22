@@ -95,6 +95,22 @@ document.addEventListener("DOMContentLoaded", () => {
         statusElement.textContent = "Status: Camera Connected";
     }
 
+    function askQuestion(transcript) {
+        if (reasoningBusy) {
+            console.warn("Perception Module: I'm already thinking. Please wait.");
+            return;
+        }
+        if (socket.connected) {
+            console.log("Perception Module: Asking question...");
+            reasoningBusy = true;
+            summarizeBtn.disabled = true;
+            if (typeof micBtn !== 'undefined' && micBtn) micBtn.disabled = true;
+            statusElement.textContent = "Status: Thinking...";
+            socket.emit("ask_question", transcript);
+        }
+    }
+
+
     function requestSummary() {
         // Voice Trigger Guard: Prevent concurrent requests using dedicated state
         if (reasoningBusy) {
@@ -129,10 +145,15 @@ document.addEventListener("DOMContentLoaded", () => {
         recognition.onresult = (event) => {
             const transcript = event.results[0][0].transcript.toLowerCase();
             console.log(`Perception Module: Heard -> "${transcript}"`);
-            
-            // Check for trigger words
-            if (transcript.includes("summarize") || transcript.includes("day")) {
-                console.log("Perception Module: Trigger word detected. Requesting summary.");
+        
+            // Client-Side Intent Routing
+            const isQuestion = transcript.includes("what") || transcript.includes("when") || transcript.includes("compare") || transcript.includes("yesterday") || transcript.includes("did i");
+
+            if (isQuestion) {
+                console.log("Perception Module: Intent mapped to memory intelligence.");
+                askQuestion(transcript);
+            } else {
+                console.log("Perception Module: Intent mapped to generic summary.");
                 requestSummary();
             }
         };
