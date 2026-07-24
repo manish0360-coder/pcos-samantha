@@ -38,7 +38,8 @@ function resolveSymbolicTime(filters) {
  * Normalizes raw conversation history into the standard evidence format.
  */
 function normalizeWorkingMemory(history) {
-    return history.map(turn => ({
+    return history.map((turn, index) => ({
+        id: `wm_${index}`, // Add stable, unique ID for attribution
         source: 'working_memory',
         timestamp: new Date().toISOString(),
         content: `[${turn.role}] ${turn.content}`
@@ -50,6 +51,7 @@ function normalizeWorkingMemory(history) {
  */
 function normalizeEpisodicMemory(logs) {
     return logs.map(log => ({
+        id: `em_${log.id}`, // Add stable, unique ID referencing the SQLite primary key
         source: 'episodic_memory',
         timestamp: log.timestamp,
         content: log.description

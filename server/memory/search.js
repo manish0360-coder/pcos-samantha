@@ -13,7 +13,8 @@ const db = require("../database/db");
  */
 function searchMemory({ from, to, keyword, limit = 30 } = {}) {
     return new Promise((resolve, reject) => {
-        let sql = `SELECT timestamp, description FROM logs WHERE 1=1`;
+        // Ensure the ID is always selected for future attribution
+        let sql = `SELECT id, timestamp, description FROM logs WHERE 1=1`;
         const params = [];
 
         // 1. Apply Temporal Filters
